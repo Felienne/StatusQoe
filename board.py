@@ -30,7 +30,7 @@ class Board:
       b = Board(self.board)
       for i,field in enumerate(b.board):
         if field != 0:
-          b.board[i] = 3-field #dit verandert een 1 in ene 2 en een 2 in een 1 en moet perse zo van Rico
+          b.board[i] = field % 2 + 1 #dit verandert ook een 1 in een 2 en een 2 in een 1 en is veel mooier dan wat Rico bedacht had (nl 3-field)
 
       return b
 
@@ -53,7 +53,24 @@ class Board:
       if self.board[c[0]] == self.board[c[1]] and self.board[c[1]] == self.board[c[2]]:
         return self.board[c[0]]
 
-    return 0
+    if all(x != 0 for x in self.board):
+      return 3 #this represents a draw
+    else:
+      return 0 #no winner yet
+
+  def map_to_shape(self,c):
+    if c == 0:
+      return '_'
+    elif c == 1:
+      return 'x'
+    else:
+      return 'o'
+
+
+  def print(self):
+    for y in range(3):
+      print(''.join(self.map_to_shape(x) for x in self.board[y*3:(y+1)*3]))
+    print('-----')
 
 
 
