@@ -18,6 +18,17 @@ class Q_table:
     except IOError:
       pass
 
+  def values(self, board, player):
+    """Get the Q-values for the given board and the given player's turn."""
+    return self.table[board.state_number(player)]
+
+  def update(self, board, player, field, reward):
+    state_number = board.state_number(player)
+    q.table[state_number][field] = max(
+        0.000666,
+        q.table[state_number][field] + learning_rate * (reward - q.table[state_number][field]))
+
+
 q = Q_table()
 learning_rate = 0.8
 discount_rate = 0.95
@@ -31,8 +42,7 @@ def choose_random_play(board, player):
   return random.choice(legal_fields)
 
 def q_table_real_play(board, player):
-  state_number = board.state_number(player)
-  q_values = q.table[state_number]
+  q_values = q.values(board, player)
 
   legal_fields = board.get_legal_fields()
   legal_moves_according_to_weight = [(m,w) for m,w in enumerate(q_values) if m in legal_fields]
@@ -42,8 +52,7 @@ def q_table_real_play(board, player):
 
 
 def q_table_play_train(board, player):
-  state_number = board.state_number(player)
-  q_values = q.table[state_number]
+  q_values = q.values(board, player)
 
   legal_fields = board.get_legal_fields()
   legal_moves_according_to_weight = [(m,w) for m,w in enumerate(q_values) if m in legal_fields]
@@ -69,26 +78,18 @@ def q_table_play_train(board, player):
     immediate_reward = 100.0
   elif winner == opponent:
     immediate_reward = -100.0
-  elif winner == 3:
-    immediate_reward = 50.0
-
 
   # Future reward
-  next_state_number = new_board.state_number(opponent)
-  opponent_best_move = pick_max(enumerate(q.table[next_state_number]))
+  future_reward = -max(q.values(new_board, opponent))
+  #opponent_best_move = pick_max(enumerate(q.table[next_state_number]))
 
-  new_new_board = new_board.play(opponent, opponent_best_move)
-  our_next_move_max_q = max(q.table[new_new_board.state_number(player)])
+  #new_new_board = new_board.play(opponent, opponent_best_move)
+  #future_reward = max(q.table[new_new_board.state_number(player)])
 
 
   # de update functie is:
   # Q[s,a] = Q[s,a] + lr*(r + y*np.max(Q[s1,:]) - Q[s,a])
-
-  q.table[state_number][chosen_field] += learning_rate * (immediate_reward + discount_rate * our_next_move_max_q - q.table[state_number][chosen_field])
-
-  # Because we have negative rewards, this could have gone below 0. Clip to 0.
-  if q.table[state_number][chosen_field] < 0:
-    q.table[state_number][chosen_field] = 0
+  q.update(board, player, chosen_field, immediate_reward + discount_rate * future_reward)
 
   return chosen_field
 
@@ -133,7 +134,7 @@ def main():
 
   q.read_from_file()
 
-  max_train_games = 0
+  max_train_games = 200000
   max_stats_games = 1000
 
   wins = [0,0,0,0] #wins of player 1 as 1sr and 2nd player, then of player 2 (1st, 2nd)
