@@ -135,7 +135,7 @@ def main():
   max_stats_games = 1000
 
   wins = [0,0,0,0] #wins of player 1 as 1sr and 2nd player, then of player 2 (1st, 2nd)
-  algorithms = [choose_random_play, q_table_play_train]
+  algorithms = [q_table_play_train, q_table_play_train]
 
   for i in range(max_train_games):
     if i % 10000 == 0:
