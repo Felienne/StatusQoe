@@ -101,19 +101,18 @@ def q_table_play_train(board, player):
 def pull_from_distribution(distribution, noise):
   """Pull a value from distribution, given a list of (element, weight) pairs"""
 
-  total_elements_by_weight = flatmap(distribution, lambda element_and_weight: [element_and_weight[0]] * int(noise + element_and_weight[1] * 100))
-  return random.choice(total_elements_by_weight)
+  #total_elements_by_weight = flatmap(distribution, lambda element_and_weight: [element_and_weight[0]] * int(noise + element_and_weight[1] * 100))
+  #return random.choice(total_elements_by_weight)
 
+  weight_sum = sum(w for x, w in distribution) + noise * len(distribution)
+  rand_pick = random.random() * weight_sum
 
-  # weight_sum = sum(w for x, w in distribution)
-  # rand_pick = random.random() * weight_sum
-  #
-  # sum_so_far = 0
-  # for x, weight in distribution:
-  #   sum_so_far += weight
-  #   if rand_pick < sum_so_far:
-  #     return x
-  # return distribution[-1][0]
+  sum_so_far = 0
+  for x, weight in distribution:
+    sum_so_far += weight + noise
+    if rand_pick < sum_so_far:
+      return x
+  return distribution[-1][0]
 
 def index_of_maxval(xs):
   return xs.index(max(xs))
