@@ -57,7 +57,7 @@ def q_table_play_train(board, player):
   #have a shot to be explored (otherwise you get stuck in 1 path)
   # 1 is chosen after careful consideration ;-)
 
-  chosen_field = pull_from_distribution(moves_according_to_weight, 1)
+  chosen_field = pull_from_distribution(moves_according_to_weight, noise=10)
 
   #---- now we update the Q-table
   # Because we are a 2-player game, we must first pick the best move for
