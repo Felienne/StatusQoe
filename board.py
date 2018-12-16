@@ -60,17 +60,18 @@ class Board:
 
   def map_to_shape(self,c):
     if c == 0:
-      return '_'
+      return '·'
     elif c == 1:
       return 'x'
     else:
-      return 'o'
+      return 'O'
 
 
   def print(self):
+    print('┌───────┐')
     for y in range(3):
-      print(''.join(self.map_to_shape(x) for x in self.board[y*3:(y+1)*3]))
-    print('-----')
+      print('│ %s │' % ' '.join(self.map_to_shape(x) for x in self.board[y*3:(y+1)*3]))
+    print('└───────┘')
 
 
 

@@ -35,11 +35,9 @@ def q_table_real_play(board, player):
   q_values = q.table[state_number]
 
   legal_fields = board.get_legal_fields()
-  moves_according_to_weight = [(m,w) for m,w in enumerate(q_values) if m in legal_fields]
+  legal_moves_according_to_weight = [(m,w) for m,w in enumerate(q_values) if m in legal_fields]
 
-  max_w = max(w for m,w in moves_according_to_weight)
-
-  my_move = [m for (m,w) in moves_according_to_weight if w == max_w][0]
+  my_move = pick_max(legal_moves_according_to_weight)
   return my_move
 
 
@@ -48,16 +46,13 @@ def q_table_play_train(board, player):
   q_values = q.table[state_number]
 
   legal_fields = board.get_legal_fields()
-  moves_according_to_weight = [(m,w) for m,w in enumerate(q_values) if m in legal_fields]
-
-  if moves_according_to_weight == []:
-    return #random uit legal moves
+  legal_moves_according_to_weight = [(m,w) for m,w in enumerate(q_values) if m in legal_fields]
 
   #we need a bit of random noise added to choices, so that moves with 0 weight still
   #have a shot to be explored (otherwise you get stuck in 1 path)
   # 1 is chosen after careful consideration ;-)
 
-  chosen_field = pull_from_distribution(moves_according_to_weight, noise=10)
+  chosen_field = pull_from_distribution(legal_moves_according_to_weight, noise=10)
 
   #---- now we update the Q-table
   # Because we are a 2-player game, we must first pick the best move for
@@ -80,8 +75,7 @@ def q_table_play_train(board, player):
 
   # Future reward
   next_state_number = new_board.state_number(opponent)
-  opponent_q = q.table[next_state_number]
-  opponent_best_move = index_of_maxval(opponent_q)
+  opponent_best_move = pick_max(enumerate(q.table[next_state_number]))
 
   new_new_board = new_board.play(opponent, opponent_best_move)
   our_next_move_max_q = max(q.table[new_new_board.state_number(player)])
@@ -105,6 +99,8 @@ def pull_from_distribution(distribution, noise):
   #total_elements_by_weight = flatmap(distribution, lambda element_and_weight: [element_and_weight[0]] * int(noise + element_and_weight[1] * 100))
   #return random.choice(total_elements_by_weight)
 
+  distribution = list(distribution)  # Reify potential generator
+
   weight_sum = sum(w for x, w in distribution) + noise * len(distribution)
   rand_pick = random.random() * weight_sum
 
@@ -115,8 +111,13 @@ def pull_from_distribution(distribution, noise):
       return x
   return distribution[-1][0]
 
-def index_of_maxval(xs):
-  return xs.index(max(xs))
+
+def pick_max(distribution):
+  """Pick the value with the max weight from a list of (element, weight) pairs."""
+  distribution = list(distribution)  # Reify potential generator
+  max_w = max(w for x, w in distribution)
+  opts = [x for x, w in distribution if w == max_w]
+  return random.choice(opts)
 
 
 def flatmap(xs, f):
@@ -132,7 +133,7 @@ def main():
 
   q.read_from_file()
 
-  max_train_games = 1000000
+  max_train_games = 0
   max_stats_games = 1000
 
   wins = [0,0,0,0] #wins of player 1 as 1sr and 2nd player, then of player 2 (1st, 2nd)
@@ -158,9 +159,11 @@ def main():
 
 
     if board.winner() == 1 and not printed:
+      the_player = start_player
       for b in all_boards:
         b.print()
-        print(q.table[b.state_number(2)])
+        print('Q from perspective of %s: %s' % (the_player, q.table[b.state_number(the_player)]))
+        the_player = the_player % 2 + 1
       printed = True
 
   print(round((max_stats_games-sum(wins))/(max_stats_games+1)*100.0,2), [round(w/(max_stats_games+1)*100.0,2) for w in wins])
@@ -170,8 +173,8 @@ def main():
   q.save_to_file()
 
 def play_one_game(algorithms):
-  all_boards = []
   board = Board()
+  all_boards = [board]
   current_player = random.choice([1, 2])
   start_player = current_player
   while board.winner() == 0:
