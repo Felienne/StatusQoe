@@ -73,7 +73,7 @@ def q_table_play_train(board, player):
   if winner == player:
     immediate_reward = 100.0
   elif winner == opponent:
-    immediate_reward = 0.0
+    immediate_reward = -100.0
   elif winner == 3:
     immediate_reward = 50.0
 
@@ -92,10 +92,11 @@ def q_table_play_train(board, player):
 
   q.table[state_number][chosen_field] += learning_rate * (immediate_reward + discount_rate * our_next_move_max_q - q.table[state_number][chosen_field])
 
+  # Because we have negative rewards, this could have gone below 0. Clip to 0.
+  if q.table[state_number][chosen_field] < 0:
+    q.table[state_number][chosen_field] = 0
+
   return chosen_field
-
-
-
 
 
 def pull_from_distribution(distribution, noise):
